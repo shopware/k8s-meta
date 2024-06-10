@@ -4,6 +4,7 @@
     "license": "MIT",
     "description": "A meta package providing recipes for Shopware K8S Operator",
     "require": {
-        "shopware/core": "~6.6.0"
+        "shopware/core": "~6.6.0",
+        "league/flysystem-async-aws-s3": "*"
     }
 }

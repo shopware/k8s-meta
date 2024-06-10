@@ -1,0 +1,9 @@
+{
+    "name": "shopware/k8s-meta",
+    "type": "metapackage",
+    "license": "MIT",
+    "description": "A meta package providing recipes for Shopware K8S Operator",
+    "require": {
+        "shopware/core": "~6.6.0"
+    }
+}

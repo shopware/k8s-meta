@@ -6,7 +6,7 @@
     "require": {
         "shopware/core": "~6.6.0",
         "league/flysystem-async-aws-s3": "*",
-        "shopware/docker": "^0.2.0",
+        "shopware/docker": "*",
         "symfony/redis-messenger": "^7 || ^6"
     },
 }

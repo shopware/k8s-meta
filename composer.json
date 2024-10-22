@@ -7,6 +7,6 @@
         "shopware/core": "~6.6.0",
         "league/flysystem-async-aws-s3": "*",
         "shopware/docker": "^0.2.0",
-        "symfony/redis-messenger": "^7.1"
+        "symfony/redis-messenger": "^7 || ^6"
     },
 }

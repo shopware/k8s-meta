@@ -8,5 +8,5 @@
         "league/flysystem-async-aws-s3": "*",
         "shopware/docker": "*",
         "symfony/redis-messenger": "^7 || ^6"
-    },
+    }
 }

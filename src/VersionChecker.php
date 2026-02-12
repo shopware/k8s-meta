@@ -19,6 +19,8 @@ final class VersionChecker
             return false;
         }
 
+        $version = ltrim($version, 'vV');
+
         return version_compare($version, $targetVersion, '<');
     }
 }

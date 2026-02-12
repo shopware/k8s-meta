@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Shopware\K8sMeta;
 
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Shopware\K8sMeta\DependencyInjection\Prepend\ElasticsearchPrepend;
 use Shopware\K8sMeta\DependencyInjection\Prepend\FrameworkPrepend;
 use Shopware\K8sMeta\DependencyInjection\Prepend\ShopwarePrepend;
 use Shopware\K8sMeta\DependencyInjection\ServiceRegistration;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 class ShopwareK8SBundle extends AbstractBundle
 {

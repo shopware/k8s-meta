@@ -4,14 +4,24 @@ declare(strict_types=1);
 
 namespace Shopware\K8sMeta\Tests\Integration;
 
-use Shopware\K8sMeta\ShopwareK8SBundle;
+use Composer\InstalledVersions;
+use Shopware\Core\Checkout\Checkout as ShopwareCheckoutBundle;
+use Shopware\Core\Content\Content as ShopwareContentBundle;
+use Shopware\Core\DevOps\DevOps as ShopwareDevOpsBundle;
+use Shopware\Core\Kernel as ShopwareCoreKernel;
 use Shopware\Core\Framework\Framework as ShopwareFrameworkBundle;
+use Shopware\Core\Maintenance\Maintenance as ShopwareMaintenanceBundle;
+use Shopware\Core\Profiling\Profiling as ShopwareProfilingBundle;
+use Shopware\Core\Service\Service as ShopwareServiceBundle;
+use Shopware\Core\System\System as ShopwareSystemBundle;
+use Shopware\Elasticsearch\Elasticsearch as ShopwareElasticsearchBundle;
+use Shopware\K8sMeta\ShopwareK8SBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
+use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Extension\Extension;
-use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
@@ -25,8 +35,8 @@ final class ShopwareK8SBundleKernelIntegrationTest extends KernelTestCase
 
         self::assertTrue($container->hasParameter('env(K8S_CACHE_HOST)'));
         self::assertSame('localhost', $container->getParameter('env(K8S_CACHE_HOST)'));
-        self::assertFalse($container->hasParameter('k8s_meta.test.shopware_config_loaded'));
-        self::assertFalse($container->hasParameter('k8s_meta.test.elasticsearch_config_loaded'));
+        self::assertFalse($container->hasParameter('shopware.deployment.cluster_setup'));
+        self::assertFalse($container->hasParameter('env(K8S_ES_NUMBER_OF_REPLICAS)'));
     }
 
     public function testBootKernelLoadsShopwareAndServicesConfigWhenShopwareCoreBundleIsPresent(): void
@@ -35,8 +45,8 @@ final class ShopwareK8SBundleKernelIntegrationTest extends KernelTestCase
 
         $container = self::getContainer();
 
-        self::assertTrue($container->hasParameter('shopware.deployment.cluster_setup'));
-        self::assertTrue($container->getParameter('shopware.deployment.cluster_setup'));
+        self::assertTrue($container->hasParameter('env(K8S_REDIS_SESSION_DSN)'));
+        self::assertTrue($container->hasParameter('env(K8S_FILESYSTEM_PUBLIC_BUCKET)'));
     }
 
     public function testBootKernelLoadsElasticsearchConfigWhenElasticsearchBundleIsPresent(): void
@@ -45,8 +55,10 @@ final class ShopwareK8SBundleKernelIntegrationTest extends KernelTestCase
 
         $container = self::getContainer();
 
-        self::assertTrue($container->hasParameter('k8s_meta.test.elasticsearch_config_loaded'));
-        self::assertTrue($container->getParameter('k8s_meta.test.elasticsearch_config_loaded'));
+        self::assertTrue($container->hasParameter('env(K8S_ES_NUMBER_OF_REPLICAS)'));
+        self::assertTrue($container->hasParameter('env(K8S_ES_NUMBER_OF_SHARDS)'));
+        self::assertNull($container->getParameter('env(K8S_ES_NUMBER_OF_REPLICAS)'));
+        self::assertNull($container->getParameter('env(K8S_ES_NUMBER_OF_SHARDS)'));
     }
 
     protected static function createKernel(array $options = []): Kernel
@@ -64,18 +76,27 @@ final class IntegrationTestKernel extends Kernel
         private readonly bool $withShopwareCoreBundle,
         private readonly bool $withElasticsearchBundle,
     ) {
-        parent::__construct('test', true);
+        parent::__construct('dev', true);
     }
 
     public function registerBundles(): iterable
     {
         $bundles = [
             new FrameworkBundle(),
+            new MonologBundle(),
+            new TwigBundle(),
             new ShopwareK8SBundle(),
         ];
 
-        if ($this->withShopwareCoreBundle) {
-            $bundles[] = new LightweightShopwareCoreBundle();
+        if ($this->withShopwareCoreBundle || $this->withElasticsearchBundle) {
+            $bundles[] = new ShopwareFrameworkBundle();
+            $bundles[] = new ShopwareSystemBundle();
+            $bundles[] = new ShopwareContentBundle();
+            $bundles[] = new ShopwareCheckoutBundle();
+            $bundles[] = new ShopwareServiceBundle();
+            $bundles[] = new ShopwareDevOpsBundle();
+            $bundles[] = new ShopwareMaintenanceBundle();
+            $bundles[] = new ShopwareProfilingBundle();
         }
 
         if ($this->withElasticsearchBundle) {
@@ -88,9 +109,14 @@ final class IntegrationTestKernel extends Kernel
     public function registerContainerConfiguration(LoaderInterface $loader): void
     {
         $loader->load(static function (ContainerBuilder $container): void {
+            $container->setParameter('kernel.cache.hash', 'test');
             $container->loadFromExtension('framework', [
                 'test' => true,
                 'secret' => 'test',
+                'router' => [
+                    'resource' => 'kernel::loadRoutes',
+                    'type' => 'service',
+                ],
             ]);
         });
     }
@@ -113,40 +139,25 @@ final class IntegrationTestKernel extends Kernel
     {
         return sys_get_temp_dir() . '/k8s-meta-tests/log';
     }
-}
 
-final class LightweightShopwareCoreBundle extends ShopwareFrameworkBundle
-{
-    public function boot(): void
+    protected function getKernelParameters(): array
     {
-        // Intentionally skipped: full Shopware boot needs services from other core bundles.
-    }
+        $parameters = parent::getKernelParameters();
+        $projectDir = rtrim($this->getProjectDir(), '/');
+        $coreDir = \dirname((string) (new \ReflectionClass(ShopwareCoreKernel::class))->getFileName());
 
-    public function build(ContainerBuilder $container): void
-    {
-        // Only required for ShopwareK8SBundle service wiring in this test.
-        $container->register('shopware.redis.connection.session', \stdClass::class);
-    }
-}
-
-final class ShopwareElasticsearchBundle extends Bundle
-{
-    public function getContainerExtension(): ?Extension
-    {
-        return new ShopwareElasticsearchExtension();
-    }
-}
-
-final class ShopwareElasticsearchExtension extends Extension
-{
-    public function getAlias(): string
-    {
-        return 'elasticsearch';
-    }
-
-    public function load(array $configs, ContainerBuilder $container): void
-    {
-        $container->resolveEnvPlaceholders($configs);
-        $container->setParameter('k8s_meta.test.elasticsearch_config_loaded', $configs !== []);
+        return array_merge(
+            $parameters,
+            [
+                'kernel.cache.hash' => 'test',
+                'kernel.shopware_version' => InstalledVersions::getPrettyVersion('shopware/core') ?? '6.7.0.0',
+                'kernel.shopware_version_revision' => null,
+                'kernel.shopware_core_dir' => $coreDir,
+                'kernel.plugin_dir' => $projectDir . '/custom/plugins',
+                'kernel.plugin_infos' => [],
+                'kernel.app_dir' => $projectDir . '/custom/apps',
+                'kernel.active_plugins' => [],
+            ],
+        );
     }
 }

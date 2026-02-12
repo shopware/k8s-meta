@@ -1,15 +1,44 @@
 {
     "name": "shopware/k8s-meta",
-    "type": "metapackage",
+    "type": "symfony-bundle",
     "license": "MIT",
-    "description": "A meta package providing recipes for Shopware K8S Operator",
+    "description": "A Symfony bundle providing K8S operator configuration for Shopware",
+    "autoload": {
+        "psr-4": {
+            "Shopware\\K8sMeta\\": "src/"
+        }
+    },
+    "config": {
+        "platform": {
+            "ext-grpc": "8.1",
+            "ext-opentelemetry": "8.1"
+        },
+        "allow-plugins": {
+            "carthage-software/mago": true,
+            "symfony/runtime": true,
+            "php-http/discovery": true,
+            "tbachert/spi": true
+        }
+    },
     "require": {
-        "shopware/core": "~6.7.0",
+        "php": "^8.2",
+        "symfony/http-kernel": "^6.4 || ^7.0",
+        "shopware/core": "~6.6.0 || ~6.7.0",
         "open-telemetry/exporter-otlp": "^1.1",
         "open-telemetry/transport-grpc": "^1.1",
         "shopware/opentelemetry": "^0.1.5",
         "league/flysystem-async-aws-s3": "*",
         "shopware/docker": "*",
         "symfony/redis-messenger": "^7 || ^6"
+    },
+    "extra": {
+        "symfony": {
+            "bundle": "Shopware\\K8sMeta\\ShopwareK8SBundle"
+        }
+    },
+    "require-dev": {
+        "carthage-software/mago": "^1.8.0",
+        "phpunit/phpunit": "^10.5",
+        "shopware/elasticsearch": "~6.6.0 || ~6.7.0"
     }
 }

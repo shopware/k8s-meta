@@ -9,7 +9,6 @@
         "open-telemetry/transport-grpc": "^1.1",
         "shopware/opentelemetry": "^0.1.5",
         "league/flysystem-async-aws-s3": "*",
-        "shopware/docker": "*",
         "symfony/redis-messenger": "^7 || ^6"
     }
 }

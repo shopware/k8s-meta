@@ -1,14 +1,15 @@
 {
-    "name": "shopware/k8s-meta",
-    "type": "metapackage",
-    "license": "MIT",
-    "description": "A meta package providing recipes for Shopware K8S Operator",
-    "require": {
-        "shopware/core": "~6.7.0",
-        "open-telemetry/exporter-otlp": "^1.1",
-        "open-telemetry/transport-grpc": "^1.1",
-        "shopware/opentelemetry": "^0.1.5",
-        "league/flysystem-async-aws-s3": "*",
-        "symfony/redis-messenger": "^7 || ^6"
-    }
+  "name": "shopware/k8s-meta",
+  "type": "metapackage",
+  "license": "MIT",
+  "description": "A meta package providing recipes for Shopware K8S Operator",
+  "require": {
+    "shopware/core": "~6.7.0",
+    "open-telemetry/exporter-otlp": "^1.1",
+    "open-telemetry/transport-grpc": "^1.1",
+    "shopware/opentelemetry": "^0.1.5",
+    "shopware/deployment-helper": "*",
+    "league/flysystem-async-aws-s3": "*",
+    "symfony/redis-messenger": "^7 || ^6"
+  }
 }
